@@ -1,7 +1,7 @@
 import { Box, Typography, Grid, Button, CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SearchBar from "../components/SearchBar";
 import MovieCard from "../components/MovieCard";
 import useInfiniteScrollMovies from "../hooks/useInfiniteScrollMovies";
@@ -10,12 +10,38 @@ const Home = () => {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
+  const [favorites, setFavorites] = useState([]);
+
+  // Retrieve the last search query and favorites from localStorage when the component mounts
+  useEffect(() => {
+    const lastSearch = localStorage.getItem("lastSearch");
+    if (lastSearch) {
+      setQuery(lastSearch); // Set the last search as the initial query
+    }
+
+    const savedFavorites = JSON.parse(localStorage.getItem("favorites")) || [];
+    setFavorites(savedFavorites); // Set the saved favorites
+  }, []);
+
+  // Save the search query in localStorage whenever the query changes
+  const handleSearch = (newQuery) => {
+    localStorage.setItem("lastSearch", newQuery); // Save to localStorage
+    setQuery(newQuery);
+  };
 
   const { movies, lastMovieRef, isLoading } = useInfiniteScrollMovies(query);
 
-  const handleSearch = (newQuery) => {
-    localStorage.setItem("lastSearch", newQuery);
-    setQuery(newQuery);
+  // Add or remove a movie from the favorites list
+  const handleFavoriteToggle = (movie) => {
+    let updatedFavorites;
+    if (favorites.some((fav) => fav.id === movie.id)) {
+      updatedFavorites = favorites.filter((fav) => fav.id !== movie.id);
+    } else {
+      updatedFavorites = [...favorites, movie];
+    }
+
+    setFavorites(updatedFavorites);
+    localStorage.setItem("favorites", JSON.stringify(updatedFavorites)); // Save to localStorage
   };
 
   return (
@@ -30,8 +56,16 @@ const Home = () => {
       <SearchBar onSearch={handleSearch} />
 
       <Grid container spacing={2} sx={{ mt: 2 }}>
+        {movies.length === 0 && !isLoading && (
+          <Typography variant="h6" color="text.secondary">
+            No movies found. Please try again.
+          </Typography>
+        )}
+
         {movies.map((movie, index) => {
           const isLast = movies.length === index + 1;
+          const isFavorite = favorites.some((fav) => fav.id === movie.id); // Check if the movie is in the favorites list
+          
           return (
             <Grid
               item
@@ -41,7 +75,12 @@ const Home = () => {
               key={movie.id}
               ref={isLast ? lastMovieRef : null}
             >
-              <MovieCard movie={movie} onClick={() => navigate(`/movie/${movie.id}`)} />
+              <MovieCard
+                movie={movie}
+                onClick={() => navigate(`/movie/${movie.id}`)}
+                onFavoriteToggle={() => handleFavoriteToggle(movie)}
+                isFavorite={isFavorite} // Pass the favorite status to the MovieCard
+              />
             </Grid>
           );
         })}
