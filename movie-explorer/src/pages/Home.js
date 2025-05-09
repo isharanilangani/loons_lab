@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
+import { Box, Typography, Grid, Button } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import { fetchTrendingMovies, searchMovies } from "../api/tmdb";
+import { useAuth } from "../context/AuthContext";
 import SearchBar from "../components/SearchBar";
 import MovieCard from "../components/MovieCard";
-import { Grid, Typography, Button, Box } from "@mui/material";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
 
 const Home = () => {
   const [movies, setMovies] = useState([]);
