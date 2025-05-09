@@ -6,8 +6,8 @@ const api = axios.create({
   baseURL: 'https://api.themoviedb.org/3',
 });
 
-export const fetchTrendingMovies = () =>
-  api.get(`/trending/movie/week?api_key=${API_KEY}`);
+export const fetchTrendingMovies = (page = 1) =>
+  api.get(`/trending/movie/week?api_key=${API_KEY}&page=${page}`);
 
 export const searchMovies = (query, page = 1) =>
   api.get(`/search/movie?api_key=${API_KEY}&query=${query}&page=${page}`);

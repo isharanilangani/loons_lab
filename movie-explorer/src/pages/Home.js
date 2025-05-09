@@ -1,43 +1,22 @@
-import { useEffect, useState } from "react";
-import { Box, Typography, Grid, Button } from "@mui/material";
+import { Box, Typography, Grid, Button, CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { fetchTrendingMovies, searchMovies } from "../api/tmdb";
 import { useAuth } from "../context/AuthContext";
+import { useState } from "react";
 import SearchBar from "../components/SearchBar";
 import MovieCard from "../components/MovieCard";
+import useInfiniteScrollMovies from "../hooks/useInfiniteScrollMovies";
 
 const Home = () => {
-  const [movies, setMovies] = useState([]);
-  const navigate = useNavigate();
   const { logout, user } = useAuth();
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
 
-  const loadTrending = async () => {
-    try {
-      const res = await fetchTrendingMovies();
-      setMovies(res.data.results);
-    } catch (error) {
-      console.error("Failed to load trending movies:", error);
-    }
+  const { movies, lastMovieRef, isLoading } = useInfiniteScrollMovies(query);
+
+  const handleSearch = (newQuery) => {
+    localStorage.setItem("lastSearch", newQuery);
+    setQuery(newQuery);
   };
-
-  const handleSearch = async (query) => {
-    try {
-      const res = await searchMovies(query);
-      setMovies(res.data.results);
-      localStorage.setItem("lastSearch", query);
-    } catch (error) {
-      console.error("Search error:", error);
-    }
-  };
-
-  useEffect(() => {
-    const lastQuery = localStorage.getItem("lastSearch");
-    if (lastQuery) {
-      handleSearch(lastQuery);
-    } else {
-      loadTrending();
-    }
-  }, []);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -51,18 +30,28 @@ const Home = () => {
       <SearchBar onSearch={handleSearch} />
 
       <Grid container spacing={2} sx={{ mt: 2 }}>
-        {movies.length > 0 ? (
-          movies.map((movie) => (
-            <Grid item xs={12} sm={6} md={3} key={movie.id}>
-              <MovieCard movie={movie} onClick={(id) => navigate(`/movie/${id}`)} />
+        {movies.map((movie, index) => {
+          const isLast = movies.length === index + 1;
+          return (
+            <Grid
+              item
+              xs={12}
+              sm={6}
+              md={3}
+              key={movie.id}
+              ref={isLast ? lastMovieRef : null}
+            >
+              <MovieCard movie={movie} onClick={() => navigate(`/movie/${movie.id}`)} />
             </Grid>
-          ))
-        ) : (
-          <Typography variant="body1" sx={{ mt: 4, mx: "auto" }}>
-            No movies found.
-          </Typography>
-        )}
+          );
+        })}
       </Grid>
+
+      {isLoading && (
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+          <CircularProgress />
+        </Box>
+      )}
     </Box>
   );
 };
