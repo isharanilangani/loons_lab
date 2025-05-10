@@ -1,12 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { fetchTrendingMovies, searchMovies } from "../api/tmdb";
 
-const useInfiniteScrollMovies = (query) => {
+const useLoadMoreMovies = (query) => {
   const [movies, setMovies] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const observer = useRef();
 
   const loadMovies = useCallback(async () => {
     if (isLoading || !hasMore) return;
@@ -38,23 +37,7 @@ const useInfiniteScrollMovies = (query) => {
     }
   }, [query]);
 
-  const lastMovieRef = useCallback(
-    (node) => {
-      if (isLoading) return;
-      if (observer.current) observer.current.disconnect();
-
-      observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasMore) {
-          setPage((prevPage) => prevPage + 1);
-        }
-      });
-
-      if (node) observer.current.observe(node);
-    },
-    [isLoading, hasMore]
-  );
-
-  return { movies, lastMovieRef, isLoading };
+  return { movies, loadMovies, isLoading, hasMore };
 };
 
-export default useInfiniteScrollMovies;
+export default useLoadMoreMovies;

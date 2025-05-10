@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { useState, useEffect } from "react";
 import SearchBar from "../components/SearchBar";
 import MovieCard from "../components/MovieCard";
-import useInfiniteScrollMovies from "../hooks/useInfiniteScrollMovies";
+import useLoadMoreMovies from "../hooks/useLoadMoreMovies";
 
 const Home = () => {
   const { logout, user } = useAuth();
@@ -29,7 +29,7 @@ const Home = () => {
     setQuery(newQuery);
   };
 
-  const { movies, lastMovieRef, isLoading } = useInfiniteScrollMovies(query);
+  const { movies, loadMovies, isLoading, hasMore } = useLoadMoreMovies(query);
 
   // Add or remove a movie from the favorites list
   const handleFavoriteToggle = (movie) => {
@@ -62,19 +62,11 @@ const Home = () => {
           </Typography>
         )}
 
-        {movies.map((movie, index) => {
-          const isLast = movies.length === index + 1;
+        {movies.map((movie) => {
           const isFavorite = favorites.some((fav) => fav.id === movie.id); // Check if the movie is in the favorites list
           
           return (
-            <Grid
-              item
-              xs={12}
-              sm={6}
-              md={3}
-              key={movie.id}
-              ref={isLast ? lastMovieRef : null}
-            >
+            <Grid item xs={12} sm={6} md={3} key={movie.id}>
               <MovieCard
                 movie={movie}
                 onClick={() => navigate(`/movie/${movie.id}`)}
@@ -89,6 +81,26 @@ const Home = () => {
       {isLoading && (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
           <CircularProgress />
+        </Box>
+      )}
+
+      {!isLoading && hasMore && (
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+          <Button
+            variant="contained"
+            onClick={() => loadMovies()}
+            disabled={isLoading}
+          >
+            Load More
+          </Button>
+        </Box>
+      )}
+
+      {!hasMore && !isLoading && (
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+          <Typography variant="h6" color="text.secondary">
+            No more movies to load.
+          </Typography>
         </Box>
       )}
     </Box>
